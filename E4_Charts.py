@@ -73,8 +73,8 @@ def clean(x,y):
 	"""
 	newX = []
 	newY = []
-	print("length of y is: " + str(len(y)))
-	print("length of x is: " +str(len(x)))
+	##print("length of y is: " + str(len(y)))
+	##print("length of x is: " +str(len(x)))
 	for i in range(len(y)):
 		if (y[i]>1.5) and (y[i]<40):
 			newX.append(x[i])
@@ -141,19 +141,19 @@ def separateData(data,tagdata):
 	current = 0		#counter to keep track of position in time
 
 	for t in range(6):
-		print("t is: " + str(t))
+		##print("t is: " + str(t))
 		for s in range(current, len(times)):
 			#x.append(s)		#populating x values
 			#find all the index to separate data
 			if (times[s]>tags[t]):
-				print("found one!")
+				#print("found one!")
 				divIndex.append(s)
 				current = s
 				break
 			elif (s == len(times)-1) and (t==5):
 				divIndex.append(s)
 
-	print(divIndex)
+	##print(divIndex)
 	#make x-coordinates
 	for r in range(len(y)):
 		x.append(r)
@@ -167,7 +167,7 @@ def separateData(data,tagdata):
 	testX = x[divIndex[4]:divIndex[5]]
 	testY = y[divIndex[4]:divIndex[5]]
 
-	print("relaxX is length: " +str(len(relaxX)))
+	#print("relaxX is length: " +str(len(relaxX)))
 
 	#transition periods
 	trans1X = x[divIndex[1]:divIndex[2]]
@@ -177,8 +177,8 @@ def separateData(data,tagdata):
 
 	minY = min(y)
 	maxY = max(y)
-	print("minY is: " + str(minY))
-	print("maxY is: " +str(maxY))
+	#print("minY is: " + str(minY))
+	#print("maxY is: " +str(maxY))
 
 	return [relaxX,relaxY, trans1X, trans1Y, habitX,habitY, trans2X, trans2Y, testX,testY, minY, maxY]
 
@@ -187,9 +187,9 @@ def cleanSessions(data):
 	minY =0
 	maxY =0
 	for i in range(0,len(data)-3,2):
-		print("i is: " +str(i))
-		print(len(data[i]))
-		print(len(data[i+1]))
+		#print("i is: " +str(i))
+		#print(len(data[i]))
+		#print(len(data[i+1]))
 		temp = clean2(data[i],data[i+1])
 		cleanData.append(temp[0])
 		cleanData.append(temp[1])
@@ -202,8 +202,8 @@ def cleanSessions(data):
 				minY = min(data[i+1])
 			if (max(data[i+1])>maxY):
 				maxY = max(data[i+1])
-		print("maxY is: " + str(maxY))
-		print("minY is: " +str(minY))
+		#print("maxY is: " + str(maxY))
+		#print("minY is: " +str(minY))
 	
 	cleanData.append(minY)
 	cleanData.append(maxY)
@@ -221,6 +221,7 @@ def rescaleData (data,datatype):
 	Rescales  Stress to 15 min
 	Rescales y-values between 0-1
 	"""
+	timeRange=[]
 
 	if (datatype == "EDA"):	#4hz
 		timeRange = [[0,3600],[3600,4320],[4320,6720],[6720,7440],[7440,11040]]
@@ -230,22 +231,22 @@ def rescaleData (data,datatype):
 
 	minY = data[len(data)-2]
 	maxY = data[len(data)-1]
-	print("minY is in rescale is: " + str(minY))
-	print("maxY is in rescale is: " + str(maxY))
+	#print("minY is in rescale is: " + str(minY))
+	#print("maxY is in rescale is: " + str(maxY))
 
 	for i in range(0,len(data)-2,2):		# remap x values
-		print("i is: " + str(i))
-		print("length data[i] is: " +str(len(data[i])))
+		#print("i is: " + str(i))
+		#print("length data[i] is: " +str(len(data[i])))
 		dL = len(data[i])-1
-		print("dL is: " + str(dL))
+		#print("dL is: " + str(dL))
 		data[i] = remap(data[i][0], data[i][dL],timeRange[int(i/2)][0],timeRange[int(i/2)][1],data[i])
 
 	for q in range(1,len(data)-2,2):
-		print("q is: " + str(q))
-		print("length data[q] is: " +str(len(data[q])))		# remap y values
+		#print("q is: " + str(q))
+		#print("length data[q] is: " +str(len(data[q])))		# remap y values
 		dL = len(data[q])-1
 		data[q] = remap(minY, maxY,0,1,data[q])
-		#print(data[i])
+		##print(data[i])
 
 	return data
 
@@ -284,7 +285,7 @@ def setXYRange(groupFile, type):
 		#scale x and y axis
 		scaleData = rescaleData(updateData,type)
 		#scaleData = data
-		#print(scaleData)
+		##print(scaleData)
 
 		concatX = []
 		concatY = []
@@ -292,9 +293,9 @@ def setXYRange(groupFile, type):
 		for i in range(0,len(scaleData)-2,2):
 			concatX += scaleData[i]
 			concatY += scaleData[i+1]
-			print(scaleData[i+1])
+			#print(scaleData[i+1])
 		
-		#print(concatY)
+		##print(concatY)
 		masterX.append(concatX)
 		masterY.append(concatY)
 
@@ -381,6 +382,98 @@ def plotMultiGraph(groupFile, type, group):
 		plt.clf() #clear figure for next group.
 
 	return
+
+
+def calcStats(groupFile, type, group):
+	"""
+	Shapiro Wilks test to get p-value
+	Welch Test/T-test for trends
+
+	groupFile = array of filepaths to participant lists
+	type = type of data to be visualized ("EDA", "HR", "ACC")
+	group = array of group names ["Control", "Slow", "Fast"]
+	"""
+	import scipy.stats
+
+	allDiff = []
+
+	for g in range(len(groupFile)):
+		#group[g] #control, fast, or slow
+
+		subjects = openReadFile(groupFile[g])
+		arrAvgDiff = getAverageChange(subjects)
+		allDiff.append(arrAvgDiff)
+		#print(arrAvgDiff)
+		print("Shapiro‐Wilks p‐value ", group[g], scipy.stats.shapiro(arrAvgDiff)[1])
+
+	#print(allDiff[0])
+	#print(allDiff[1])
+	#print(allDiff[2])
+	CS = scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)
+	CF = scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)
+	SF = scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)
+	
+	# print("T-test ", "C-S", scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)[1])
+	# print("T-test ", "C-F", scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)[1])
+	# print("T-test ", "S-F", scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)[1])
+	print("T-test", "C-S", "t = " + str(CS[0]), "p = " + str(CS[1]))
+	print("T-test", "C-F", "t = " + str(CF[0]), "p = " + str(CF[1]))
+	print("T-test", "S-F", "t = " + str(SF[0]), "p = " + str(SF[1]))
+
+
+	return
+
+
+
+
+def getAverageChange(subjects):
+	"""
+	Grabs data per subject.
+	Cleans Data.
+	Normalizes data between 0 and 1 to eliminate personal ranges.
+	Rescales data to correct X axis.
+	Calculates average difference between relaxed and stressed conditions.
+	Returns an array of average differences.
+	"""
+
+	for s in range(len(subjects)):
+		subjects[s]=subjects[s][0]
+
+	#subjectDict = {}
+	avgDifference =[]
+	#yUnits =""
+
+	for i in range(len(subjects)):
+		s = subjects[i]
+		tagPath = "./"+s+"/"+"E4"+"/"+"tags.csv"
+
+		#Now get the right path to the datafile.
+		'''
+		if ((type == "eda") or (type == "EDA")):
+			dataPath = "./"+s+"/"+"E4"+"/"+"EDA.csv"
+		elif (type == "hr" or type == "HR"):
+			dataPath = "./"+s+"/"+"E4"+"/"+"HR.csv"
+			'''
+
+		dataPath = "./"+s+"/"+"E4"+"/"+"EDA.csv"
+
+		tagData = openReadFile(tagPath)
+		sensorData = openReadFile(dataPath)
+		data = separateData(sensorData,tagData)
+		cleanData = cleanSessions(data)
+		updateData=getMinMax(cleanData)
+		scaleData = rescaleData(updateData,"EDA")
+
+		rAvg = getAverage(scaleData[1]) #check separateData for order
+		sAvg = getAverage(scaleData[9]) #check separateData for order
+		diff =sAvg-rAvg
+		avgDifference.append(diff)
+		#dictionary subject: change in eda
+		#subjectDict[s] = diff
+
+	return avgDifference #returns array of differences in EDA
+
+
 
 
 def plotBarChart(groupFile, type, group):
@@ -494,7 +587,7 @@ def plotBarChart(groupFile, type, group):
 
 	return
 
-
+#Plots all groups with standard of deviations line. 
 def singleBarChart(groupFile, type, group):
 	"""
 	Set some plot style stuff -----------------------------------------------------
@@ -597,16 +690,140 @@ def singleBarChart(groupFile, type, group):
 
 
 
+'''
+Computes average difference between stressed and relaxed phases
+of the experiment per user
+Used in plotHistogram
+'''
+def getAverageDifferencePerUser(tagPath, dataPath):
+	tagData = openReadFile(tagPath)
+	sensorData = openReadFile(dataPath)
+	data = separateData(sensorData,tagData)
+	cleanData = cleanSessions(data)
+	updateData=getMinMax(cleanData)
+	scaleData = rescaleData(updateData,"EDA")
+
+	# order of scaleData is from separateData()
+	rAvg = getAverage(scaleData[1]) # relaxed average
+	sAvg = getAverage(scaleData[9]) # stressed average
+	diff =sAvg-rAvg
+	return diff
+
+"""
+Plots histogram of average change in EDA per group
+HR and BR were disgarded from this sensor
+"""
+def plotHistogram(groupFile, dir, type, group):
+	"""
+	groupFile = array of filepaths to participant lists
+	type = type of data to be visualized ("EDA", "HR", "ACC")
+	group = array of group names ["Control", "Slow", "Fast"]
+	"""
+
+	for g in range(len(groupFile)):
+
+		"""
+		Set some plot style stuff -----------------------------------------------------
+		"""
+		#get rid of border around graphs
+		fig, ax = plt.subplots()
+		ax.spines['top'].set_visible(False)
+		ax.spines['right'].set_visible(False)
+		#ax.spines['bottom'].set_visible(False)
+		#ax.spines['left'].set_visible(False)
+
+		#colors control, fast, slow
+		if (group[g] == "Control"):
+			barcolor = "#6AC8C7"
+		elif (group[g] == "Fast"):
+			barcolor = "#F1C62F"
+		elif (group[g] == "Slow"):
+			barcolor= "#FF8F4B"
+		elif(group[g] == "HR" or group == "BR"):
+			barcolor = ["#6AC8C7","#FF8F4B","#F1C62F"]
+
+		"""
+		Get the data--------------------------------------------------------------------
+		"""
+		subjects = openReadFile(groupFile[g])
+
+		for s in range(len(subjects)):
+			subjects[s]=subjects[s][0]
+
+		avgDifference =[]
+		yUnits =""
+
+		for s in subjects:
+			tagPath = dir+s+"/"+"E4"+"/"+"tags.csv"
+
+			#Now get the right path to the datafile.
+			if ((type == "eda") or (type == "EDA")):
+				dataPath = dir+s+"/"+"E4"+"/"+"EDA.csv"
+				yUnits = "ΔEDA (μS)"
+
+			# compute average difference
+			diff = getAverageDifferencePerUser(tagPath, dataPath)
+			avgDifference.append(diff)
+		
+		"""
+		Y-range and horizontal lines-------------------------------------------------
+		#Values have been normalized between 0 and 1.
+		"""
+		# yMax = 1
+		# yMin =0
+		# for y in range(yMin,11,1):
+		# 	plt.axhline(y*0.1, color = "80", linewidth = "0.25", linestyle="-", zorder = 1)
+		
+		"""
+		Plot histogram--------------------------------------------------------------------
+		"""
+		print(avgDifference)
+		num_bins = [0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8]
+		# the histogram of the data
+		n, bins, patches = plt.hist(avgDifference, bins=num_bins, normed=1, facecolor=barcolor, alpha=0.9, zorder=5)
+
+		"""
+		Labels and stuff--------------------------------------------------------------
+		"""
+		plt.ylim(0,6)
+		for y in range(0,7,1):
+			plt.axhline(y, color = "80", linewidth = "0.25", linestyle="-", zorder = 1)
+		# plt.tick_params(top='off', bottom='off', left='off', right='off', \
+		# 	labelleft='on', labelbottom='on')
+		# plt.xticks(range(len(sortedSD)), sortedSD.keys())
+
+		# plt.ylabel(yUnits)
+		# plt.xlabel("PARTICIPANTS")
+
+		
+		# if ("EDA" in type):
+		plt.title("Histogram of Change in EDA from Stressed to Relaxed Conditions \n\n" + group[g] + " Group")
+
+
+		fig = matplotlib.pyplot.gcf()
+		fig.savefig("./"+"E4_Histogram_"+type+"_"+group[g]+".png", dpi = 300)
+		plt.clf() # clear plot for next group.
+	return
+
+
+
+
 """
 --------------------------------------------------------------------------------------
 Run stuff down here
 """
-allGroups = ["./EDA-Sample.csv"]
-groupNames = ["All"]
-#allGroups = ["./PARTICIPANT LIST - Control.csv", "./PARTICIPANT LIST - Slow.csv", "./PARTICIPANT LIST - Fast.csv"] 
-#groupNames = ["Control", "Slow", "Fast"]
+#allGroups = ["./EDA-Sample.csv"]
+#groupNames = ["All"]
+directory = "../../Dropbox (MIT)/MAS.630/"
+newGroups = [directory+"PARTICIPANT LIST - Control.csv", directory+"PARTICIPANT LIST - Slow.csv", directory+"PARTICIPANT LIST - Fast.csv"]
 
-plotMultiGraph(allGroups,"EDA", groupNames)
+allGroups = ["./PARTICIPANT LIST - Control.csv", "./PARTICIPANT LIST - Slow.csv","./PARTICIPANT LIST - Fast.csv"] 
+groupNames = ["Control", "Slow", "Fast"]
+
+
+# calcStats(allGroups,"EDA",groupNames)
+#plotMultiGraph(allGroups,"EDA", groupNames)
 #plotBarChart(allGroups,"EDA", groupNames)
 #singleBarChart(allGroups,"EDA", groupNames)
+plotHistogram(newGroups,directory,"EDA",groupNames)
 
