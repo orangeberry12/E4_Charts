@@ -3,6 +3,7 @@ import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import scipy.stats
 
 
 def openReadFile(filepath):
@@ -693,7 +694,7 @@ def singleBarChart(groupFile, type, group):
 '''
 Computes average difference between stressed and relaxed phases
 of the experiment per user
-Used in plotHistogram
+returns a float
 '''
 def getAverageDifferencePerUser(tagPath, dataPath):
 	tagData = openReadFile(tagPath)
@@ -729,8 +730,6 @@ def plotHistogram(groupFile, dir, type, group):
 		fig, ax = plt.subplots()
 		ax.spines['top'].set_visible(False)
 		ax.spines['right'].set_visible(False)
-		#ax.spines['bottom'].set_visible(False)
-		#ax.spines['left'].set_visible(False)
 
 		#colors control, fast, slow
 		if (group[g] == "Control"):
@@ -766,15 +765,6 @@ def plotHistogram(groupFile, dir, type, group):
 			avgDifference.append(diff)
 		
 		"""
-		Y-range and horizontal lines-------------------------------------------------
-		#Values have been normalized between 0 and 1.
-		"""
-		# yMax = 1
-		# yMin =0
-		# for y in range(yMin,11,1):
-		# 	plt.axhline(y*0.1, color = "80", linewidth = "0.25", linestyle="-", zorder = 1)
-		
-		"""
 		Plot histogram--------------------------------------------------------------------
 		"""
 		print(avgDifference)
@@ -788,12 +778,6 @@ def plotHistogram(groupFile, dir, type, group):
 		plt.ylim(0,6)
 		for y in range(0,7,1):
 			plt.axhline(y, color = "80", linewidth = "0.25", linestyle="-", zorder = 1)
-		# plt.tick_params(top='off', bottom='off', left='off', right='off', \
-		# 	labelleft='on', labelbottom='on')
-		# plt.xticks(range(len(sortedSD)), sortedSD.keys())
-
-		# plt.ylabel(yUnits)
-		# plt.xlabel("PARTICIPANTS")
 
 		
 		# if ("EDA" in type):
@@ -806,6 +790,73 @@ def plotHistogram(groupFile, dir, type, group):
 	return
 
 
+
+def getAvgDiffPerGroup(dir, subjects):
+	groupArray = []
+
+	for s in range(len(subjects)):
+			subjects[s]=subjects[s][0]
+
+	for s in subjects:
+		tagPath = dir+s+"/"+"E4"+"/"+"tags.csv"
+
+		#Now get the right path to the datafile.
+		dataPath = dir+s+"/"+"E4"+"/"+"EDA.csv"
+
+		# compute average difference
+		diff = getAverageDifferencePerUser(tagPath, dataPath)
+		groupArray.append(diff)
+
+	return groupArray
+
+"""
+Calculates Kruskal Wallis test
+For non-normalized data (*sigh* ours)
+Used when ANOVA assumptions not met, needs at least 5 data points.
+"""
+def calcKruskalWallis(groupFile, group, dir):
+	allDiff=[]
+
+	for g in range(len(groupFile)):
+		subjects=openReadFile(groupFile[g])
+		arrayAverageDiff = getAvgDiffPerGroup(dir, subjects)
+		allDiff.append(arrayAverageDiff)
+
+	# 0 - control, 1 - slow, 2 - fast
+	CS = scipy.stats.kruskal(allDiff[0],allDiff[1])
+	print("C-S: ", CS)
+	CF = scipy.stats.kruskal(allDiff[0],allDiff[2])
+	print("C-F: ", CF)
+	SF = scipy.stats.kruskal(allDiff[1],allDiff[2])
+	print("S-F: ", SF)
+
+	return
+
+
+
+"""
+Performs ANOVA test
+Assumes independent groups
+data from normal distribution
+Equal standards of deviation
+"""
+def calcANOVA(groupFile, group, dir):
+	allDiff=[]
+
+	for g in range(len(groupFile)):
+		subjects=openReadFile(groupFile[g])
+		arrayAverageDiff = getAvgDiffPerGroup(dir, subjects)
+		allDiff.append(arrayAverageDiff)
+
+	# 0 - control, 1 - slow, 2 - fast
+	CS = scipy.stats.f_oneway(allDiff[0],allDiff[1])
+	print("C-S: ", CS)
+	CF = scipy.stats.f_oneway(allDiff[0],allDiff[2])
+	print("C-F: ", CF)
+	SF = scipy.stats.f_oneway(allDiff[1],allDiff[2])
+	print("S-F: ", SF)
+
+	return
 
 
 """
@@ -825,5 +876,6 @@ groupNames = ["Control", "Slow", "Fast"]
 #plotMultiGraph(allGroups,"EDA", groupNames)
 #plotBarChart(allGroups,"EDA", groupNames)
 #singleBarChart(allGroups,"EDA", groupNames)
-plotHistogram(newGroups,directory,"EDA",groupNames)
-
+# plotHistogram(newGroups,directory,"EDA",groupNames)
+# calcKruskalWallis(newGroups, groupNames, directory)
+calcANOVA(newGroups, groupNames, directory)
